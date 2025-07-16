@@ -3,8 +3,8 @@ from pydantic import BaseModel, EmailStr
 
 # Данные пользователя (GET /me)
 class UserOut(BaseModel):
-    id: int
-    email: str
+    user_id: int
+    login: str
     full_name: str
     created_at: datetime
 
@@ -13,9 +13,6 @@ class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str
-
-
-
 
 # Используются для совместимости с SQLAlchemy моделями
 class UserInDB(UserOut):

@@ -6,7 +6,6 @@ from sqlalchemy import text, select
 from dotenv import load_dotenv
 
 from srt.data_base.base import Base
-from srt.data_base.models import Role
 
 load_dotenv()  # Загружает переменные из .env
 HOST = os.getenv('HOST')

@@ -2,13 +2,14 @@ from pydantic import BaseModel, EmailStr
 
 # Для регистрации нового пользователя (POST /register)
 class UserCreate(BaseModel):
-    email: EmailStr
+    login: EmailStr
     password: str
     full_name: str | None = None
 
 # Для входа в систему (POST /login)
 class LoginRequest(BaseModel):
-    email: EmailStr
+    ip_address: str
+    login: EmailStr
     password: str
 
 # Для обновления токена (POST /refresh)
