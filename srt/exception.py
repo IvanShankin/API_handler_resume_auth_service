@@ -1,16 +1,26 @@
 from fastapi import HTTPException, status
-
+from srt.config import LOGIN_BLOCK_TIME
 
 class InvalidTokenException(HTTPException):
     def __init__(self):
         super().__init__(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
-
 class TokenExpiredException(HTTPException):
     def __init__(self):
         super().__init__(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired")
 
-
 class InvalidCredentialsException(HTTPException):
     def __init__(self):
         super().__init__(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
+
+class UserAlreadyRegistered(HTTPException):
+    def __init__(self):
+        super().__init__(status_code=status.HTTP_409_CONFLICT,detail="Login already registered")
+
+class UserNotFound(HTTPException):
+    def __init__(self):
+        super().__init__(status_code=status.HTTP_403_FORBIDDEN,detail="User not found")
+
+class ToManyAttemptsEnter(HTTPException):
+    def __init__(self):
+        super().__init__(status_code=status.HTTP_403_FORBIDDEN,detail=f"Too many login attempts. Please try again in {LOGIN_BLOCK_TIME.seconds//60} minutes.")
