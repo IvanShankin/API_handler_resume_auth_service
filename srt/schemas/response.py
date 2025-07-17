@@ -4,7 +4,7 @@ from pydantic import BaseModel, EmailStr
 # Данные пользователя (GET /me)
 class UserOut(BaseModel):
     user_id: int
-    login: str
+    username: str
     full_name: str
     created_at: datetime
 
