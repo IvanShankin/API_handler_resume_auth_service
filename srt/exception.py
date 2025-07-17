@@ -15,7 +15,7 @@ class InvalidCredentialsException(HTTPException):
 
 class UserAlreadyRegistered(HTTPException):
     def __init__(self):
-        super().__init__(status_code=status.HTTP_409_CONFLICT,detail="Login already registered")
+        super().__init__(status_code=status.HTTP_409_CONFLICT,detail="username already registered")
 
 class UserNotFound(HTTPException):
     def __init__(self):
@@ -23,4 +23,5 @@ class UserNotFound(HTTPException):
 
 class ToManyAttemptsEnter(HTTPException):
     def __init__(self):
-        super().__init__(status_code=status.HTTP_403_FORBIDDEN,detail=f"Too many login attempts. Please try again in {LOGIN_BLOCK_TIME.seconds//60} minutes.")
+        super().__init__(status_code=status.HTTP_403_FORBIDDEN,detail=f"Too many username attempts. Please try again in"
+                                                                      f" {LOGIN_BLOCK_TIME.seconds//60} minutes")

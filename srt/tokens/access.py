@@ -1,22 +1,30 @@
 import os
 from datetime import datetime, timedelta, UTC
 
+import redis
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from pydantic import ValidationError, json
 
 from srt.data_base.data_base import get_db
+from srt.dependencies import get_redis
 from srt.exception import InvalidCredentialsException
 from srt.data_base.models import User
+from srt.schemas.response import UserOut
 
 load_dotenv()
 SECRET_KEY = os.getenv('SECRET_KEY')
 ACCESS_TOKEN_EXPIRE_MINUTES = float(os.getenv('ACCESS_TOKEN_EXPIRE_MINUTES'))
 ALGORITHM = os.getenv('ALGORITHM')
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="auth/login",
+    scheme_name="OAuth2PasswordBearer",
+    scopes={"read": "Read access", "write": "Write access"}
+)
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
@@ -39,8 +47,16 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
 
 async def get_current_user(
         token: str = Depends(oauth2_scheme),
-        db: AsyncSession = Depends(get_db)
+        db: AsyncSession = Depends(get_db),
+        redis_client: redis.Redis = Depends(get_redis)
 ):
+    cached_user = await redis_client.get(f"user:{token}")
+    try:
+        if cached_user:
+            return  UserOut.model_validate_json(cached_user) # Pydantic парсит JSON
+    except ValidationError:
+        # Удаляем битый кэш и продолжаем
+        await redis_client.delete(f"user:{token}")
 
     try:
         # Декодируем токен
@@ -59,10 +75,27 @@ async def get_current_user(
     except JWTError:  # Ловим все ошибки JWT
         raise InvalidCredentialsException
 
-    # Проверяем существование пользователя
+    # проверяем существование пользователя
     result = await db.execute(select(User).where(User.user_id == int(user_id)))
     user = result.scalar_one_or_none()
     if user is None:
         raise InvalidCredentialsException
 
-    return user
+        # Конвертируем SQLAlchemy объект в словарь
+    user_dict = {
+        "user_id": user.user_id,
+        "username": user.username,
+        "full_name": user.full_name,
+        "created_at": user.created_at
+    }
+
+    # Конвертируем в Pydantic
+    user_out = UserOut.model_validate(user_dict)
+    # сохраняем пользователя в Redis на время жизни токена
+    await redis_client.setex(
+        f"user:{token}",
+        int(ACCESS_TOKEN_EXPIRE_MINUTES * 60),  # Время жизни в секундах
+        user_out.model_dump_json()  # Предполагаем, что у User есть .json()
+    )
+
+    return user_out

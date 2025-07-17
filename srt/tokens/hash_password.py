@@ -1,5 +1,5 @@
 from passlib.context import CryptContext
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto",  bcrypt__ident="2b")
 
 def get_hash_password(password: str) -> str:
     """Преобразует пароль в хеш
