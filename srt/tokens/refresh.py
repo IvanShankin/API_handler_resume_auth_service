@@ -14,9 +14,12 @@ REFRESH_TOKEN_EXPIRE_DAYS = float(os.getenv('REFRESH_TOKEN_EXPIRE_DAYS'))
 ALGORITHM = os.getenv('ALGORITHM')
 
 
-def create_refresh_token(user_id: int) -> str:
-    # Генерируем случайную строку
-    return secrets.token_urlsafe(64)
+async def create_refresh_token(db: AsyncSession) -> str:
+    while True:
+        token = secrets.token_urlsafe(64) # Генерируем случайную строку
+        exists = await db.execute(select(RefreshToken).where(RefreshToken.token == token))
+        if not exists.scalar(): # если такого токена не существует
+            return token
 
 async def save_refresh_token(user_id: int, token: str, db: AsyncSession):
     expires_at = datetime.now(UTC) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
