@@ -1,5 +1,3 @@
-from datetime import datetime, timezone
-
 from sqlalchemy import  text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,7 +7,7 @@ from srt.config import logger
 from srt.schemas.response import UserOut
 from srt.data_base.models import User
 from srt.data_base.data_base import get_db
-from srt.dependencies import Redis, get_redis
+from srt.dependencies.redis_dependencies import Redis, get_redis
 from srt.tokens import  get_current_user
 
 router = APIRouter()

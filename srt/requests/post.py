@@ -1,22 +1,23 @@
-
-
+import json
 from datetime import datetime, timezone
+
+from redis import Redis
 from sqlalchemy import select, func, cast, Boolean, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, status, Request, Form
 from datetime import timedelta
 
-from srt.dependencies import redis_client
+from srt.dependencies import redis_client, producer, get_redis
 from srt.schemas.request import UserCreate, RefreshTokenRequest
 from srt.schemas.response import TokenResponse, UserOut
 from srt.data_base.models import User, RefreshToken
 from srt.data_base.data_base import get_db
-from srt.config import MAX_ACTIVE_SESSIONS, LOGIN_BLOCK_TIME, MAX_ATTEMPTS_ENTER
+from srt.config import MAX_ACTIVE_SESSIONS, LOGIN_BLOCK_TIME, MAX_ATTEMPTS_ENTER, KAFKA_TOPIC_NAME
 from srt.tokens.refresh import REFRESH_TOKEN_EXPIRE_DAYS
 from srt.config import logger
 from srt.exception import (UserAlreadyRegistered, InvalidCredentialsException, InvalidTokenException, UserNotFound,
                            ToManyAttemptsEnter)
-from srt.tokens import (create_access_token, create_refresh_token, get_current_user, oauth2_scheme, get_hash_password,
+from srt.tokens import (create_access_token, create_refresh_token, get_current_user, get_hash_password,
                         verify_password)
 
 router = APIRouter()
@@ -65,6 +66,12 @@ async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
     await db.commit()
     await db.refresh(new_user)
 
+    producer.sent_message(
+        topic=KAFKA_TOPIC_NAME,
+        key=f'user_{new_user.user_id}',
+        value=json.dumps({'user_id': new_user.user_id, 'user_name': new_user.username, 'full_name': new_user.full_name}).encode('utf-8')
+    )
+
     return new_user
 
 
@@ -111,7 +118,7 @@ async def login(
             )
 
     access_token = create_access_token(data={"sub": str(user.user_id)})
-    refresh_token = create_refresh_token(user.user_id)
+    refresh_token = await create_refresh_token(db)
 
     db_refresh_token = RefreshToken(
         user_id=user.user_id,
@@ -135,7 +142,7 @@ async def refresh_token(
         - refresh_token (из предыдущего успешного логина)
         Возвращает:
         - Новую пару access + refresh токенов
-        """
+    """
 
     result_token_db = await db.execute(select(RefreshToken).where(access_token.refresh_token == RefreshToken.token))
     db_token = result_token_db.scalar_one_or_none()
@@ -147,7 +154,7 @@ async def refresh_token(
         raise UserNotFound()
 
     new_access_token = create_access_token(data={"sub": str(user.user_id)})
-    new_refresh_token = create_refresh_token(user.user_id)
+    new_refresh_token = await create_refresh_token(db)
 
     db_token.token = new_refresh_token
     db_token.expires_at = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
@@ -155,3 +162,21 @@ async def refresh_token(
 
     return TokenResponse(access_token=new_access_token, refresh_token=new_refresh_token, token_type="bearer")
 
+
+@router.post('/auth/logout')
+async def logout(
+        current_user: User = Depends(get_current_user),
+        redis_client: Redis = Depends(get_redis),
+        db: AsyncSession = Depends(get_db)
+):
+    # Удаляем из Redis
+    await redis_client.delete(f"user:{current_user.user_id}")
+
+    # Удаляем refresh-токены из БД (опционально)
+    await db.execute(
+        delete(RefreshToken)
+        .where(RefreshToken.user_id == current_user.user_id)
+    )
+    await db.commit()
+
+    return {"status": "success"}

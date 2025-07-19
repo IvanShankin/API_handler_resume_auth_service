@@ -8,10 +8,10 @@ from jose import JWTError, jwt
 from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from pydantic import ValidationError, json
+from pydantic import ValidationError
 
 from srt.data_base.data_base import get_db
-from srt.dependencies import get_redis
+from srt.dependencies.redis_dependencies import get_redis
 from srt.exception import InvalidCredentialsException
 from srt.data_base.models import User
 from srt.schemas.response import UserOut
@@ -50,13 +50,8 @@ async def get_current_user(
         db: AsyncSession = Depends(get_db),
         redis_client: redis.Redis = Depends(get_redis)
 ):
-    cached_user = await redis_client.get(f"user:{token}")
-    try:
-        if cached_user:
-            return  UserOut.model_validate_json(cached_user) # Pydantic парсит JSON
-    except ValidationError:
-        # Удаляем битый кэш и продолжаем
-        await redis_client.delete(f"user:{token}")
+
+
 
     try:
         # Декодируем токен
@@ -72,6 +67,13 @@ async def get_current_user(
         if user_id is None:
             raise InvalidCredentialsException
 
+        try:
+            cached_user = await redis_client.get(f"user:{user_id}") # пытаемся найти в Redis
+            if cached_user:
+                return UserOut.model_validate_json(cached_user) # Pydantic парсит JSON
+        except ValidationError:
+            # Удаляем битый кэш и продолжаем
+            await redis_client.delete(f"user:{user_id}")
     except JWTError:  # Ловим все ошибки JWT
         raise InvalidCredentialsException
 
@@ -93,7 +95,7 @@ async def get_current_user(
     user_out = UserOut.model_validate(user_dict)
     # сохраняем пользователя в Redis на время жизни токена
     await redis_client.setex(
-        f"user:{token}",
+        f"user:{user_id}",
         int(ACCESS_TOKEN_EXPIRE_MINUTES * 60),  # Время жизни в секундах
         user_out.model_dump_json()  # Предполагаем, что у User есть .json()
     )
