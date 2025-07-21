@@ -1,4 +1,6 @@
 import json
+import os
+from dotenv import load_dotenv
 from datetime import datetime, timezone
 
 from redis import Redis
@@ -12,13 +14,16 @@ from srt.schemas.request import UserCreate, RefreshTokenRequest
 from srt.schemas.response import TokenResponse, UserOut
 from srt.data_base.models import User, RefreshToken
 from srt.data_base.data_base import get_db
-from srt.config import MAX_ACTIVE_SESSIONS, LOGIN_BLOCK_TIME, MAX_ATTEMPTS_ENTER, KAFKA_TOPIC_NAME
+from srt.config import MAX_ACTIVE_SESSIONS, LOGIN_BLOCK_TIME, MAX_ATTEMPTS_ENTER
 from srt.tokens.refresh import REFRESH_TOKEN_EXPIRE_DAYS
 from srt.config import logger
 from srt.exception import (UserAlreadyRegistered, InvalidCredentialsException, InvalidTokenException, UserNotFound,
                            ToManyAttemptsEnter)
 from srt.tokens import (create_access_token, create_refresh_token, get_current_user, get_hash_password,
                         verify_password)
+
+load_dotenv()
+KAFKA_TOPIC_NAME = os.getenv('KAFKA_TOPIC_NAME')
 
 router = APIRouter()
 
@@ -69,7 +74,12 @@ async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
     producer.sent_message(
         topic=KAFKA_TOPIC_NAME,
         key=f'user_{new_user.user_id}',
-        value=json.dumps({'user_id': new_user.user_id, 'user_name': new_user.username, 'full_name': new_user.full_name}).encode('utf-8')
+        value=json.dumps({
+            'user_id': int(new_user.user_id),
+            'username': new_user.username,
+            'full_name': new_user.full_name,
+            'created_at': str(new_user.created_at),
+        }).encode('utf-8')
     )
 
     return new_user
@@ -137,7 +147,7 @@ async def refresh_token(
     db: AsyncSession = Depends(get_db)
 ):
     """
-        Обновление пары токенов по валидному refresh токену
+        Обновление пары токенов по валидному refresh токен
         Требует:
         - refresh_token (из предыдущего успешного логина)
         Возвращает:
@@ -169,6 +179,7 @@ async def logout(
         redis_client: Redis = Depends(get_redis),
         db: AsyncSession = Depends(get_db)
 ):
+    """Удаляет refresh токен у всех сессий"""
     # Удаляем из Redis
     await redis_client.delete(f"user:{current_user.user_id}")
 

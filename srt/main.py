@@ -1,10 +1,14 @@
 import asyncio
 import uvicorn
+import os
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from srt.data_base.data_base import create_data_base
 from srt.requests import main_router
 from srt.dependencies import check_exists_topic
-from config import KAFKA_TOPIC_NAME
+
+load_dotenv()
+KAFKA_TOPIC_NAME = os.getenv('KAFKA_TOPIC_NAME')
 
 app = FastAPI()
 
