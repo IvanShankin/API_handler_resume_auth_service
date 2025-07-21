@@ -50,9 +50,6 @@ async def get_current_user(
         db: AsyncSession = Depends(get_db),
         redis_client: redis.Redis = Depends(get_redis)
 ):
-
-
-
     try:
         # Декодируем токен
         payload = jwt.decode(

@@ -2,7 +2,7 @@ import os
 import logging
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import text, select
+from sqlalchemy import text
 from dotenv import load_dotenv
 
 from srt.data_base.base import Base
@@ -20,17 +20,16 @@ SQL_DB_URL = f'postgresql+asyncpg://{USER}:{PASSWORD}@{HOST}/{DB_NAME}'
 
 engine_for_create = create_async_engine(SQL_DB_URL)
 
-# это переменная для создания подключения
-engine = create_async_engine(SQL_DB_URL)
+async def get_db() -> AsyncSession:
+    engine = create_async_engine(SQL_DB_URL)
 
-session_local = sessionmaker(
-    engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-    autoflush=False
-)
+    session_local = sessionmaker(
+        engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+        autoflush=False
+    )
 
-async def get_db()->AsyncSession:
     db = session_local()
     try:
         yield db
