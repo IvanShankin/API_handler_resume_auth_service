@@ -38,11 +38,16 @@ jobs:
         image: confluentinc/cp-zookeeper:latest
         ports:
           - 2181:2181
+        options: >-
+          --health-cmd "echo ruok | nc localhost 2181 | grep imok"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
       kafka:
         image: confluentinc/cp-kafka:7.2.2
         env:
-          KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+          KAFKA_ZOOKEEPER_CONNECT: localhost:2181
           KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
           KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
         ports:
