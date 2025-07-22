@@ -54,10 +54,10 @@ jobs:
                 ZOOKEEPER_CLIENT_PORT: 2181
                 ZOOKEEPER_TICK_TIME: 2000
               healthcheck:
-                test: ["CMD-SHELL", "echo ruok | nc 127.0.0.1 2181 | grep imok || exit 1"]
-                interval: 10s
-                timeout: 10s
-                retries: 15
+                test: ["CMD", "sh", "-c", "[ -f /tmp/zookeeper-ready ] || (echo stat | nc 127.0.0.1 2181 > /dev/null && touch /tmp/zookeeper-ready)"]
+                interval: 5s
+                timeout: 5s
+                retries: 30
                 start_period: 30s
 
             kafka:
@@ -72,22 +72,21 @@ jobs:
                 KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
                 KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
                 KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-                KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
                 KAFKA_BROKER_ID: 1
                 KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-              healthcheck:
-                test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list || exit 1"]
-                interval: 10s
-                timeout: 10s
-                retries: 15
-                start_period: 60s
           EOF
 
-          docker compose -f docker-compose-kafka.yml up -d
-          # Даем больше времени на инициализацию
-          sleep 30
+          # Запускаем сервисы без healthcheck
+          docker compose -f docker-compose-kafka.yml up -d --wait zookeeper
+
+          # Явно ждем готовности Zookeeper
+          timeout 60 bash -c 'until (echo stat | nc 127.0.0.1 2181); do sleep 2; done'
+
+          # Запускаем Kafka
+          docker compose -f docker-compose-kafka.yml up -d --wait kafka
+
+          # Проверяем статус
           docker compose -f docker-compose-kafka.yml ps
-          docker compose -f docker-compose-kafka.yml logs zookeeper
 
       # Основной шаг загрузки переменных
       - name: Load .env file
