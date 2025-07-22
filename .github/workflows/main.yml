@@ -52,19 +52,12 @@ jobs:
                 - "2181:2181"
               environment:
                 ZOOKEEPER_CLIENT_PORT: 2181
-                ZOOKEEPER_TICK_TIME: 2000
-              healthcheck:
-                test: ["CMD", "sh", "-c", "[ -f /tmp/zookeeper-ready ] || (echo stat | nc 127.0.0.1 2181 > /dev/null && touch /tmp/zookeeper-ready)"]
-                interval: 5s
-                timeout: 5s
-                retries: 30
-                start_period: 30s
 
             kafka:
               image: confluentinc/cp-kafka:7.2.2
               depends_on:
                 zookeeper:
-                  condition: service_healthy
+                  condition: service_started
               ports:
                 - "29092:29092"
                 - "9092:9092"
@@ -76,17 +69,8 @@ jobs:
                 KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
           EOF
 
-          # Запускаем сервисы без healthcheck
-          docker compose -f docker-compose-kafka.yml up -d --wait zookeeper
-
-          # Явно ждем готовности Zookeeper
-          timeout 60 bash -c 'until (echo stat | nc 127.0.0.1 2181); do sleep 2; done'
-
-          # Запускаем Kafka
-          docker compose -f docker-compose-kafka.yml up -d --wait kafka
-
-          # Проверяем статус
-          docker compose -f docker-compose-kafka.yml ps
+          docker compose -f docker-compose-kafka.yml up -d
+          sleep 30  # Даем время на инициализацию
 
       # Основной шаг загрузки переменных
       - name: Load .env file
@@ -111,9 +95,6 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install psycopg2-binary redis kafka-python
-
-      - name: Wait for services
-        run: sleep 60
 
       - name: Run tests
         env:
