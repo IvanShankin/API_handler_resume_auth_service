@@ -55,7 +55,7 @@ jobs:
 
       # Основной шаг загрузки переменных
       - name: Load .env file
-        uses: falti/dotenv-action@v2
+        uses: falti/dotenv-action@v1
         with:
           env-file: .env
           override: true

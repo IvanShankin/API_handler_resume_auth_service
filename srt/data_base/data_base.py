@@ -8,15 +8,15 @@ from dotenv import load_dotenv
 from srt.data_base.base import Base
 
 load_dotenv()  # Загружает переменные из .env
-HOST = os.getenv('HOST')
-USER = os.getenv('USER')
-PASSWORD = os.getenv('PASSWORD')
+DB_HOST = os.getenv('DB_HOST')
+DB_USER = os.getenv('DB_USER')
+DB_PASSWORD = os.getenv('DB_PASSWORD')
 DB_NAME = os.getenv('DB_NAME')
 
 # URL для подключения к серверу PostgreSQL без указания конкретной базы данных
-POSTGRES_SERVER_URL = f'postgresql+asyncpg://{USER}:{PASSWORD}@{HOST}/postgres'
+POSTGRES_SERVER_URL = f'postgresql+asyncpg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/postgres'
 # postgresql+asyncpg это означает, что БД работает в асинхронном режиме
-SQL_DB_URL = f'postgresql+asyncpg://{USER}:{PASSWORD}@{HOST}/{DB_NAME}'
+SQL_DB_URL = f'postgresql+asyncpg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}'
 
 engine_for_create = create_async_engine(SQL_DB_URL)
 
