@@ -35,12 +35,10 @@ jobs:
           --health-retries 5
 
       zookeeper:
-        image: confluentinc/cp-zookeeper:latest
+        image: confluentinc/cp-zookeeper:7.2.2  # явно указываем версию, совместимую с Kafka
         ports:
           - 2181:2181
         options: >-
-          --network kafka-network
-          --network-alias zookeeper
           --health-cmd "echo ruok | nc localhost 2181 | grep imok"
           --health-interval 10s
           --health-timeout 5s
@@ -49,14 +47,13 @@ jobs:
       kafka:
         image: confluentinc/cp-kafka:7.2.2
         env:
-          KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+          KAFKA_ZOOKEEPER_CONNECT: localhost:2181  # используем localhost, так как порт проброшен
           KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
           KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
         ports:
-          - 29092:29092
-          - 9092:9092
+          - 29092:29092  # для подключения с хоста
+          - 9092:9092    # для внутренних соединений
         options: >-
-          --network kafka-network
           --health-cmd "kafka-topics --bootstrap-server localhost:9092 --list"
           --health-interval 10s
           --health-timeout 5s
