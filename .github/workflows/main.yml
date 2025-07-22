@@ -47,11 +47,12 @@ jobs:
       kafka:
         image: confluentinc/cp-kafka:7.2.2
         env:
-          KAFKA_ZOOKEEPER_CONNECT: localhost:2181
+          KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
           KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
           KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
         ports:
-          - 9092:9092
+          - 29092:29092  # ← внешний порт для хоста (тесты)
+          - 9092:9092    # ← внутренний порт
         options: >-
           --health-cmd "kafka-topics --bootstrap-server localhost:9092 --list"
           --health-interval 10s
@@ -87,7 +88,7 @@ jobs:
           pip install psycopg2-binary redis kafka-python
 
       - name: Wait for services
-        run: sleep 30
+        run: sleep 60
 
       - name: Run tests
         env:
