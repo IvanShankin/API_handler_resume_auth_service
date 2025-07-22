@@ -13,9 +13,9 @@ jobs:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_USER: ${{ env.DB_USER }}
-          POSTGRES_PASSWORD: ${{ env.DB_PASSWORD }}
-          POSTGRES_DB: ${{ env.DB_NAME }}
+          POSTGRES_USER: ${{ secrets.DB_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.DB_NAME }}
         ports:
           - 5432:5432
         options: >-
@@ -60,13 +60,12 @@ jobs:
           env-file: .env
           override: true
 
-      # Проверяем загруженные переменные
-      - name: Verify PostgreSQL credentials
+      # Проверка загруженных переменных (опционально)
+      - name: Debug env variables
         run: |
-          if [ -z "${{ env.DB_USER }}" ] || [ -z "${{ env.DB_PASSWORD }}" ] || [ -z "${{ env.DB_NAME }}" ]; then
-            echo "Error: PostgreSQL credentials not set in .env"
-            exit 1
-          fi
+          echo "DB_USER: ${{ secrets.DB_USER }}"
+          echo "DB_NAME: ${{ secrets.DB_NAME }}"
+          echo "KAFKA_TOPIC: ${{ secrets.KAFKA_TOPIC_NAME }}"
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -83,15 +82,14 @@ jobs:
 
       - name: Run tests
         env:
-          # Все переменные берутся ТОЛЬКО из .env
-          SECRET_KEY: ${{ env.SECRET_KEY }}
-          DB_USER: ${{ env.DB_USER }}
-          DB_PASSWORD: ${{ env.DB_PASSWORD }}
-          DB_NAME: ${{ env.DB_NAME }}
-          REDIS_HOST: ${{ env.REDIS_HOST }}
-          REDIS_PORT: ${{ env.REDIS_PORT }}
-          KAFKA_BOOTSTRAP_SERVERS: ${{ env.KAFKA_BOOTSTRAP_SERVERS }}
-          KAFKA_TOPIC_NAME: ${{ env.KAFKA_TOPIC_NAME }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          DB_USER: ${{ vars.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ vars.DB_NAME }}
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          KAFKA_BOOTSTRAP_SERVERS: localhost:9092
+          KAFKA_TOPIC_NAME: ${{ vars.KAFKA_TOPIC_NAME }}
           MODE: TEST
         run: pytest
 
