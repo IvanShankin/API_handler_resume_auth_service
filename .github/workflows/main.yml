@@ -12,8 +12,10 @@ jobs:
     services:
       postgres:
         image: postgres:15
-        with:
-          env-file: .env
+        env:
+          POSTGRES_USER: ${{ env.USER }}
+          POSTGRES_PASSWORD: ${{ env.PASSWORD }}
+          POSTGRES_DB: ${{ env.DB_NAME }}
         ports:
           - 5432:5432
         options: >-
@@ -31,6 +33,14 @@ jobs:
         uses: falti/dotenv-action@v1
         with:
           env-file: .env
+        id: dotenv
+
+      # Делаем переменные доступными для сервисов
+      - name: Export env variables
+        run: |
+          echo "POSTGRES_USER=${{ steps.dotenv.outputs.POSTGRES_USER }}" >> $GITHUB_ENV
+          echo "POSTGRES_PASSWORD=${{ steps.dotenv.outputs.POSTGRES_PASSWORD }}" >> $GITHUB_ENV
+          echo "POSTGRES_DB=${{ steps.dotenv.outputs.POSTGRES_DB }}" >> $GITHUB_ENV
 
       - name: Setup Python
         uses: actions/setup-python@v4
