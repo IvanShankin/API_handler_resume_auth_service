@@ -78,7 +78,7 @@ jobs:
           pip install psycopg2-binary redis kafka-python
 
       - name: Wait for services
-        run: sleep 15
+        run: sleep 30
 
       - name: Run tests
         env:
