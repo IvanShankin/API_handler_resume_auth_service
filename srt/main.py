@@ -3,6 +3,7 @@ import uvicorn
 import os
 from dotenv import load_dotenv
 from fastapi import FastAPI
+
 from srt.data_base.data_base import create_data_base
 from srt.requests import main_router
 from srt.dependencies import check_exists_topic
@@ -20,6 +21,6 @@ if __name__ == '__main__':
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=8006,
+        port=8000,
         reload=True
     )
