@@ -52,7 +52,7 @@ jobs:
                 - "2181:2181"
               environment:
                 ZOOKEEPER_CLIENT_PORT: 2181
-
+          
             kafka:
               image: confluentinc/cp-kafka:7.2.2
               depends_on:
@@ -68,9 +68,12 @@ jobs:
                 KAFKA_BROKER_ID: 1
                 KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
           EOF
-
+          
           docker compose -f docker-compose-kafka.yml up -d
-          sleep 30  # Даем время на инициализацию
+          
+          # Ждем готовности Kafka
+          echo "Waiting for Kafka..."
+          timeout 60 bash -c 'until docker run --network host --rm confluentinc/cp-kafka:7.2.2 kafka-topics --bootstrap-server localhost:29092 --list; do sleep 2; done'
 
       # Основной шаг загрузки переменных
       - name: Load .env file
@@ -104,7 +107,7 @@ jobs:
           DB_NAME: ${{ vars.DB_NAME }}
           REDIS_HOST: localhost
           REDIS_PORT: 6379
-          KAFKA_BOOTSTRAP_SERVERS: localhost:9092
+          KAFKA_BOOTSTRAP_SERVERS: localhost:29092
           KAFKA_TOPIC_NAME: ${{ vars.KAFKA_TOPIC_NAME }}
           MODE: TEST
         run: pytest
