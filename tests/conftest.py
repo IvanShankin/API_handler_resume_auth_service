@@ -37,7 +37,7 @@ consumer = Consumer(conf)
 @pytest_asyncio.fixture(scope='session', autouse=True)
 async def create_database_fixture():
     if MODE != "TEST":
-        raise ValueError("Используется основная БД!")
+        raise Exception("Используется основная БД!")
 
     await create_data_base()
 
@@ -46,7 +46,7 @@ async def check_kafka_connection():
     try:
         admin_client.list_topics(timeout=10)
     except Exception:
-        raise "Не удалось установить соединение с Kafka!"
+        raise Exception("Не удалось установить соединение с Kafka!")
 
 @pytest_asyncio.fixture
 async def db_session()->AsyncSession:

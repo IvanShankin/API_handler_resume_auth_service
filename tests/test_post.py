@@ -117,7 +117,7 @@ async def test_login(status_code, db_session, redis_session, create_user, cleari
                 if response.status_code == status.HTTP_429_TOO_MANY_REQUESTS:
                     break
             else:
-                raise "за 10 попыток входа так и не получили ошибку по количеству обращений к API"
+                raise Exception("за 10 попыток входа так и не получили ошибку по количеству обращений к API")
 
 
 @pytest.mark.asyncio
