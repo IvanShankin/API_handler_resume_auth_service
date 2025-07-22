@@ -60,12 +60,13 @@ jobs:
           env-file: .env
           override: true
 
-      # Проверка загруженных переменных (опционально)
-      - name: Debug env variables
+      # Проверяем загруженные переменные
+      - name: Verify PostgreSQL credentials
         run: |
-          echo "DB_USER: ${{ env.DB_USER }}"
-          echo "DB_NAME: ${{ env.DB_NAME }}"
-          echo "KAFKA_TOPIC: ${{ env.KAFKA_TOPIC_NAME }}"
+          if [ -z "${{ env.DB_USER }}" ] || [ -z "${{ env.DB_PASSWORD }}" ] || [ -z "${{ env.DB_NAME }}" ]; then
+            echo "Error: PostgreSQL credentials not set in .env"
+            exit 1
+          fi
 
       - name: Setup Python
         uses: actions/setup-python@v4
