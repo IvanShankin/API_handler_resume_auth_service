@@ -121,16 +121,14 @@ async def clearing_kafka():
 async def create_user(db_session: AsyncSession):
     """
     Создает тестового пользователя и возвращает данные о нём
-    :return: dict {"username", 'password', "full_name", "created_at", "access_token", "refresh_token"}
+    :return: dict {"username", 'password', "access_token", "refresh_token"}
     """
 
     password = "first_password_test"
     hashed_password = get_hash_password(password)
     new_user = User(
         username = 'first_user_test',
-        hashed_password=hashed_password,
-        full_name='first_user_full_name_test',
-        created_at=datetime.now(timezone.utc)
+        hashed_password=hashed_password
     )
     db_session.add(new_user)
     await db_session.commit()
@@ -151,8 +149,6 @@ async def create_user(db_session: AsyncSession):
         "user_id": new_user.user_id,
         "username": new_user.username,
         'password': password,
-        "full_name": new_user.full_name,
-        "created_at": new_user.created_at,
         "access_token": access_token,
         "refresh_token": refresh_token
     }

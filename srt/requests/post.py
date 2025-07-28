@@ -63,26 +63,33 @@ async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
     # Создаём пользователя
     new_user = User(
         username=user.username,
-        hashed_password=hashed_password,
-        full_name=user.full_name,
+        hashed_password=hashed_password
     )
 
     db.add(new_user)
     await db.commit()
     await db.refresh(new_user)
 
+    data_create = datetime.now(timezone.utc)
+
     producer.sent_message(
         topic=KAFKA_TOPIC_PRODUCER_FOR_UPLOADING_DATA,
-        key=f'user_{new_user.user_id}',
+        key=f'new_user',
         value=json.dumps({
             'user_id': int(new_user.user_id),
             'username': new_user.username,
-            'full_name': new_user.full_name,
-            'created_at': str(new_user.created_at),
+            'full_name': user.full_name,
+            'created_at': str(data_create),
         }).encode('utf-8')
     )
 
-    return new_user
+    user_out = UserOut(
+        user_id = int(new_user.user_id),
+        username = new_user.username,
+        full_name = user.full_name,
+        created_at = data_create
+    )
+    return user_out
 
 
 @router.post('/auth/login', response_model=TokenResponse, tags=["Authentication"],)

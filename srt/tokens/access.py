@@ -14,7 +14,7 @@ from srt.data_base.data_base import get_db
 from srt.dependencies.redis_dependencies import get_redis
 from srt.exception import InvalidCredentialsException
 from srt.data_base.models import User
-from srt.schemas.response import UserOut
+from srt.schemas.response import UserForGetCurrentUser
 
 load_dotenv()
 SECRET_KEY = os.getenv('SECRET_KEY')
@@ -67,7 +67,7 @@ async def get_current_user(
         try:
             cached_user = await redis_client.get(f"user:{user_id}") # пытаемся найти в Redis
             if cached_user:
-                return UserOut.model_validate_json(cached_user) # Pydantic парсит JSON
+                return UserForGetCurrentUser.model_validate_json(cached_user) # Pydantic парсит JSON
         except ValidationError:
             # Удаляем битый кэш и продолжаем
             await redis_client.delete(f"user:{user_id}")
@@ -83,13 +83,11 @@ async def get_current_user(
         # Конвертируем SQLAlchemy объект в словарь
     user_dict = {
         "user_id": user.user_id,
-        "username": user.username,
-        "full_name": user.full_name,
-        "created_at": user.created_at
+        "username": user.username
     }
 
     # Конвертируем в Pydantic
-    user_out = UserOut.model_validate(user_dict)
+    user_out = UserForGetCurrentUser.model_validate(user_dict)
     # сохраняем пользователя в Redis на время жизни токена
     await redis_client.setex(
         f"user:{user_id}",
