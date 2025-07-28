@@ -15,7 +15,7 @@ from tests.conftest import consumer
 
 
 load_dotenv()  # Загружает переменные из .env
-KAFKA_TOPIC_NAME= os.getenv('KAFKA_TOPIC_NAME')
+KAFKA_TOPIC_PRODUCER_FOR_UPLOADING_DATA= os.getenv('KAFKA_TOPIC_PRODUCER_FOR_UPLOADING_DATA')
 
 @pytest.mark.asuncio
 @pytest.mark.parametrize(
@@ -27,7 +27,7 @@ KAFKA_TOPIC_NAME= os.getenv('KAFKA_TOPIC_NAME')
 )
 async def test_create_user(data_request, status_code, db_session, clearing_kafka):
     # подписка на топик
-    consumer.subscribe([KAFKA_TOPIC_NAME])
+    consumer.subscribe([KAFKA_TOPIC_PRODUCER_FOR_UPLOADING_DATA])
 
     async with AsyncClient(
                 transport=ASGITransport(app),

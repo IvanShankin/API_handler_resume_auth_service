@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()  # Загружает переменные из .env
 KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS')
-KAFKA_TOPIC_NAME= os.getenv('KAFKA_TOPIC_NAME')
+KAFKA_TOPIC_PRODUCER_FOR_UPLOADING_DATA= os.getenv('KAFKA_TOPIC_PRODUCER_FOR_UPLOADING_DATA')
 MODE = os.getenv('MODE')
 
 # этот импорт необходимо указывать именно тут для корректного импорта .tests.env
@@ -89,32 +89,32 @@ async def clearing_kafka():
     cluster_metadata = admin_client.list_topics()
 
     # Проверяем существование топика
-    topic_exists = KAFKA_TOPIC_NAME in cluster_metadata.topics
+    topic_exists = KAFKA_TOPIC_PRODUCER_FOR_UPLOADING_DATA in cluster_metadata.topics
 
     # Проверяем существует ли топик перед удалением
     if topic_exists:
-        admin_client.delete_topics(topics=[KAFKA_TOPIC_NAME])
+        admin_client.delete_topics(topics=[KAFKA_TOPIC_PRODUCER_FOR_UPLOADING_DATA])
 
         # Ждём подтверждения удаления
         for _ in range(max_retries):
             current_metadata = admin_client.list_topics()
-            if KAFKA_TOPIC_NAME not in current_metadata.topics:
+            if KAFKA_TOPIC_PRODUCER_FOR_UPLOADING_DATA not in current_metadata.topics:
                 break
             time.sleep(1)
         else:
-            logger.warning(f"Topic {KAFKA_TOPIC_NAME} still exists after deletion attempts")
+            logger.warning(f"Topic {KAFKA_TOPIC_PRODUCER_FOR_UPLOADING_DATA} still exists after deletion attempts")
 
-    admin_client.create_topics([NewTopic(topic=KAFKA_TOPIC_NAME, num_partitions=1, replication_factor=1)])
+    admin_client.create_topics([NewTopic(topic=KAFKA_TOPIC_PRODUCER_FOR_UPLOADING_DATA, num_partitions=1, replication_factor=1)])
     time.sleep(2)  # даём Kafka 2 секунды на инициализацию
 
     # Проверяем создание топика
     for _ in range(max_retries):
         current_metadata = admin_client.list_topics()
-        if KAFKA_TOPIC_NAME in current_metadata.topics:
+        if KAFKA_TOPIC_PRODUCER_FOR_UPLOADING_DATA in current_metadata.topics:
             break
         time.sleep(1)
     else:
-        raise RuntimeError(f"Не удалось создать топик: {KAFKA_TOPIC_NAME}")
+        raise RuntimeError(f"Не удалось создать топик: {KAFKA_TOPIC_PRODUCER_FOR_UPLOADING_DATA}")
 
 
 @pytest_asyncio.fixture(scope="function")

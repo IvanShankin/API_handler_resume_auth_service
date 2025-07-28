@@ -23,7 +23,7 @@ from srt.tokens import (create_access_token, create_refresh_token, get_current_u
                         verify_password)
 
 load_dotenv()
-KAFKA_TOPIC_NAME = os.getenv('KAFKA_TOPIC_NAME')
+KAFKA_TOPIC_PRODUCER_FOR_UPLOADING_DATA = os.getenv('KAFKA_TOPIC_PRODUCER_FOR_UPLOADING_DATA')
 
 router = APIRouter()
 
@@ -72,7 +72,7 @@ async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
     await db.refresh(new_user)
 
     producer.sent_message(
-        topic=KAFKA_TOPIC_NAME,
+        topic=KAFKA_TOPIC_PRODUCER_FOR_UPLOADING_DATA,
         key=f'user_{new_user.user_id}',
         value=json.dumps({
             'user_id': int(new_user.user_id),

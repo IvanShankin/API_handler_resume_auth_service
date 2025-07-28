@@ -8,7 +8,7 @@ from srt.config import logger
 
 load_dotenv()
 KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS')
-KAFKA_TOPIC_NAME = os.getenv('KAFKA_TOPIC_NAME')
+KAFKA_TOPIC_PRODUCER_FOR_UPLOADING_DATA = os.getenv('KAFKA_TOPIC_PRODUCER_FOR_UPLOADING_DATA')
 
 admin_client = AdminClient({'bootstrap.servers': KAFKA_BOOTSTRAP_SERVERS})
 
@@ -67,7 +67,7 @@ def check_exists_topic(topic_name):
     cluster_metadata = admin_client.list_topics()
     if not topic_name in cluster_metadata.topics: # если topic не существует
         create_topic(
-            topic_name=KAFKA_TOPIC_NAME,
+            topic_name=KAFKA_TOPIC_PRODUCER_FOR_UPLOADING_DATA,
             num_partitions=1,
             replication_factor=1
         )
