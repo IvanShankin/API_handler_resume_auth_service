@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, status, Request, Form
 from datetime import timedelta
 
-from srt.dependencies import redis_client, producer, get_redis
+from srt.dependencies import producer,redis_client, get_redis
 from srt.schemas.request import UserCreate, RefreshTokenRequest
 from srt.schemas.response import TokenResponse, UserOut
 from srt.data_base.models import User, RefreshToken

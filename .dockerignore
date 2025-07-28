@@ -2,3 +2,5 @@
 **/.venv/
 **/.git/
 **/*.log
+.env
+.test.env

@@ -1,7 +1,6 @@
 import os
 import time
 from datetime import datetime, timezone, timedelta
-from os import getenv
 
 from dotenv import load_dotenv
 
@@ -37,7 +36,7 @@ consumer = Consumer(conf)
 @pytest_asyncio.fixture(scope='session', autouse=True)
 async def create_database_fixture():
     if MODE != "TEST":
-        raise ValueError("Используется основная БД!")
+        raise Exception("Используется основная БД!")
 
     await create_data_base()
 
@@ -46,7 +45,7 @@ async def check_kafka_connection():
     try:
         admin_client.list_topics(timeout=10)
     except Exception:
-        raise "Не удалось установить соединение с Kafka!"
+        raise Exception("Не удалось установить соединение с Kafka!")
 
 @pytest_asyncio.fixture
 async def db_session()->AsyncSession:
@@ -84,9 +83,7 @@ async def clearing_redis(redis_session):
 @pytest_asyncio.fixture(scope='function')
 async def clearing_kafka():
     """Очищает топик у kafka с которым работаем, путём его пересоздания"""
-
-
-    max_retries = 5
+    max_retries = 7
 
     # Получаем метаданные кластера
     cluster_metadata = admin_client.list_topics()
@@ -117,7 +114,7 @@ async def clearing_kafka():
             break
         time.sleep(1)
     else:
-        raise RuntimeError(f"Failed to create topic {KAFKA_TOPIC_NAME}")
+        raise RuntimeError(f"Не удалось создать топик: {KAFKA_TOPIC_NAME}")
 
 
 @pytest_asyncio.fixture(scope="function")

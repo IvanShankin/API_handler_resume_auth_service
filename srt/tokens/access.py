@@ -94,7 +94,7 @@ async def get_current_user(
     await redis_client.setex(
         f"user:{user_id}",
         int(ACCESS_TOKEN_EXPIRE_MINUTES * 60),  # Время жизни в секундах
-        user_out.model_dump_json()  # Предполагаем, что у User есть .json()
+        user_out.model_dump_json()
     )
 
     return user_out

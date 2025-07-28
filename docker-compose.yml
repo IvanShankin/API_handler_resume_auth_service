@@ -19,9 +19,9 @@ services:
       - KAFKA_TOPIC_NAME=${KAFKA_TOPIC_NAME}
 
       # данные для подключения к БД
-      - HOST=db
-      - USER=${USER}
-      - PASSWORD=${PASSWORD}
+      - DB_HOST=db
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME}
 
       - MODE=${MODE}
@@ -37,15 +37,15 @@ services:
   db:
     image: postgres:15
     environment:
-      - POSTGRES_USER=${USER}
-      - POSTGRES_PASSWORD=${PASSWORD}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data # Сохраняет данные БД
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${USER} -d ${DB_NAME}" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]
       interval: 5s
       timeout: 5s
       retries: 5

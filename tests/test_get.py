@@ -1,14 +1,9 @@
-import json
 from datetime import datetime
 
 import pytest
-from confluent_kafka import KafkaError
 from httpx import AsyncClient, ASGITransport
-from fastapi import HTTPException, status
-from sqlalchemy import select, update, cast, Boolean
-from srt.data_base.models import User,RefreshToken
 from srt.main import app
-from tests.conftest import consumer
+
 
 @pytest.mark.asyncio
 async def test_logout(create_user, redis_session, db_session):

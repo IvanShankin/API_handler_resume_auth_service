@@ -59,7 +59,7 @@ async def test_create_user(data_request, status_code, db_session, clearing_kafka
                         data_kafka = json.loads(msg.value().decode('utf-8'))
                         break
                     except KafkaError as e:
-                        raise f"Ошибка Kafka: {e}"
+                        raise Exception(f"Ошибка Kafka: {e}")
 
 
                 assert data_db.user_id == data_response["user_id"] == data_kafka['user_id']
@@ -117,7 +117,7 @@ async def test_login(status_code, db_session, redis_session, create_user, cleari
                 if response.status_code == status.HTTP_429_TOO_MANY_REQUESTS:
                     break
             else:
-                raise "за 10 попыток входа так и не получили ошибку по количеству обращений к API"
+                raise Exception("за 10 попыток входа так и не получили ошибку по количеству обращений к API")
 
 
 @pytest.mark.asyncio
