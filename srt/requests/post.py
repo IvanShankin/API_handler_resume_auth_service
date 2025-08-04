@@ -12,8 +12,8 @@ from datetime import timedelta
 from srt.dependencies import producer,redis_client, get_redis
 from srt.schemas.request import UserCreate, RefreshTokenRequest
 from srt.schemas.response import TokenResponse, UserOut
-from srt.data_base.models import User, RefreshToken
-from srt.data_base.data_base import get_db
+from srt.database.models import User, RefreshToken
+from srt.database.database import get_db
 from srt.config import MAX_ACTIVE_SESSIONS, LOGIN_BLOCK_TIME, MAX_ATTEMPTS_ENTER
 from srt.tokens.refresh import REFRESH_TOKEN_EXPIRE_DAYS
 from srt.config import logger
@@ -112,7 +112,7 @@ async def login(
         raise InvalidCredentialsException()
 
     tokens_the_current_user = await db.execute(
-        select(func.count(RefreshToken.id))
+        select(func.count(RefreshToken.refresh_token_id))
         .where(cast(RefreshToken.user_id == user.user_id,Boolean))
     ) # получим число токенов с переданным id
 
@@ -121,7 +121,7 @@ async def login(
     if quantity_tokens and quantity_tokens >= MAX_ACTIVE_SESSIONS: # если есть токены и их количество больше возможно
         # Находим ID самого старого токена
         oldest_token = await db.execute(
-            select(RefreshToken.id)
+            select(RefreshToken.refresh_token_id)
             .where(cast(RefreshToken.user_id == user.user_id, Boolean))
             .order_by(RefreshToken.expires_at.asc())
             .limit(1)
@@ -131,7 +131,7 @@ async def login(
         if oldest_token_id:
             await db.execute(
                 delete(RefreshToken)
-                .where(cast(RefreshToken.id == oldest_token_id, Boolean))
+                .where(cast(RefreshToken.refresh_token_id == oldest_token_id, Boolean))
             )
 
     access_token = create_access_token(data={"sub": str(user.user_id)})

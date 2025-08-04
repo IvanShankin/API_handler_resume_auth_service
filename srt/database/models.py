@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
-from srt.data_base.base import Base
+from srt.database.base import Base
 
 
 class User(Base):
@@ -15,7 +15,7 @@ class User(Base):
 
 class RefreshToken(Base):
     __tablename__ = "refresh_tokens"
-    id = Column(Integer, primary_key=True)
+    refresh_token_id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
     token = Column(String(512), unique=True, nullable=False)
     expires_at = Column(DateTime(timezone=True), nullable=False)

@@ -16,8 +16,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import delete
 from confluent_kafka.cimpl import NewTopic, Producer
 
-from srt.data_base.data_base import create_data_base, get_db
-from srt.data_base.models import User, RefreshToken
+from srt.database.database import create_database, get_db
+from srt.database.models import User, RefreshToken
 from srt.dependencies import get_redis, admin_client
 from srt.config import logger
 from srt.tokens import get_hash_password, create_access_token, create_refresh_token
@@ -38,7 +38,7 @@ async def create_database_fixture():
     if MODE != "TEST":
         raise Exception("Используется основная БД!")
 
-    await create_data_base()
+    await create_database()
 
 @pytest_asyncio.fixture(scope='session', autouse=True)
 async def check_kafka_connection():

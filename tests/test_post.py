@@ -9,7 +9,7 @@ from httpx import AsyncClient, ASGITransport
 from fastapi import status
 from sqlalchemy import select
 
-from srt.data_base.models import User,RefreshToken
+from srt.database.models import User,RefreshToken
 from srt.main import app
 from tests.conftest import consumer
 

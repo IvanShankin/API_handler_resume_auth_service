@@ -10,10 +10,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from pydantic import ValidationError
 
-from srt.data_base.data_base import get_db
+from srt.database.database import get_db
 from srt.dependencies.redis_dependencies import get_redis
 from srt.exception import InvalidCredentialsException
-from srt.data_base.models import User
+from srt.database.models import User
 from srt.schemas.response import UserForGetCurrentUser
 
 load_dotenv()
