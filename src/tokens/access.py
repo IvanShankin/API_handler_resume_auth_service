@@ -10,11 +10,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from pydantic import ValidationError
 
-from srt.database.database import get_db
-from srt.dependencies.redis_dependencies import get_redis
-from srt.exception import InvalidCredentialsException
-from srt.database.models import User
-from srt.schemas.response import UserForGetCurrentUser
+from src.database.database import get_db
+from src.dependencies.redis_dependencies import get_redis
+from src.exception import InvalidCredentialsException
+from src.database.models import User
+from src.schemas.response import UserForGetCurrentUser
 
 load_dotenv()
 SECRET_KEY = os.getenv('SECRET_KEY')

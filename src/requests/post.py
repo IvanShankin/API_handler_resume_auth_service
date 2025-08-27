@@ -9,17 +9,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, status, Request, Form
 from datetime import timedelta
 
-from srt.dependencies import producer,redis_client, get_redis
-from srt.schemas.request import UserCreate, RefreshTokenRequest
-from srt.schemas.response import TokenResponse, UserOut
-from srt.database.models import User, RefreshToken
-from srt.database.database import get_db
-from srt.config import MAX_ACTIVE_SESSIONS, LOGIN_BLOCK_TIME, MAX_ATTEMPTS_ENTER
-from srt.tokens.refresh import REFRESH_TOKEN_EXPIRE_DAYS
-from srt.config import logger
-from srt.exception import (UserAlreadyRegistered, InvalidCredentialsException, InvalidTokenException, UserNotFound,
+from src.dependencies import producer,redis_client, get_redis
+from src.schemas.request import UserCreate, RefreshTokenRequest
+from src.schemas.response import TokenResponse, UserOut
+from src.database.models import User, RefreshToken
+from src.database.database import get_db
+from src.config import MAX_ACTIVE_SESSIONS, LOGIN_BLOCK_TIME, MAX_ATTEMPTS_ENTER
+from src.tokens.refresh import REFRESH_TOKEN_EXPIRE_DAYS
+from src.config import logger
+from src.exception import (UserAlreadyRegistered, InvalidCredentialsException, InvalidTokenException, UserNotFound,
                            ToManyAttemptsEnter)
-from srt.tokens import (create_access_token, create_refresh_token, get_current_user, get_hash_password,
+from src.tokens import (create_access_token, create_refresh_token, get_current_user, get_hash_password,
                         verify_password)
 
 load_dotenv()

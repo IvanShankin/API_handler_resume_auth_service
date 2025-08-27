@@ -4,9 +4,9 @@ import os
 from dotenv import load_dotenv
 from fastapi import FastAPI
 
-from srt.database.database import create_database
-from srt.requests import main_router
-from srt.dependencies import check_exists_topic
+from src.database.database import create_database
+from src.requests import main_router
+from src.dependencies import check_exists_topic
 
 load_dotenv()
 KAFKA_TOPIC_PRODUCER_FOR_UPLOADING_DATA = os.getenv('KAFKA_TOPIC_PRODUCER_FOR_UPLOADING_DATA')

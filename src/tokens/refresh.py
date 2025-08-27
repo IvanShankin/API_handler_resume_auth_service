@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 
-from srt.database.models import RefreshToken
+from src.database.models import RefreshToken
 
 load_dotenv()
 REFRESH_TOKEN_EXPIRE_DAYS = float(os.getenv('REFRESH_TOKEN_EXPIRE_DAYS'))

@@ -1,5 +1,5 @@
 from fastapi import HTTPException, status
-from srt.config import LOGIN_BLOCK_TIME
+from src.config import LOGIN_BLOCK_TIME
 
 class InvalidTokenException(HTTPException):
     def __init__(self):
