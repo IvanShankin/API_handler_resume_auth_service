@@ -1,23 +1,14 @@
-import json
-import os
 import pytest
-
 from datetime import datetime
-from dotenv import load_dotenv
-from confluent_kafka import KafkaError
-from httpx import AsyncClient, ASGITransport
 from fastapi import status
 from sqlalchemy import select
 
-from src.database.models import User,RefreshToken
-from src.main import app
-from tests.conftest import consumer
+from src.database.models import Users
+from src.schemas.response import TokenResponse
 
 
-load_dotenv()  # Загружает переменные из .env
-KAFKA_TOPIC_PRODUCER_FOR_UPLOADING_DATA= os.getenv('KAFKA_TOPIC_PRODUCER_FOR_UPLOADING_DATA')
 
-@pytest.mark.asuncio
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     'data_request, status_code',
     [
@@ -25,52 +16,28 @@ KAFKA_TOPIC_PRODUCER_FOR_UPLOADING_DATA= os.getenv('KAFKA_TOPIC_PRODUCER_FOR_UPL
         ({"username": "test@example.com", "password": "string", "full_name": "string"}, 409)
     ]
 )
-async def test_create_user(data_request, status_code, db_session, clearing_kafka):
-    # подписка на топик
-    consumer.subscribe([KAFKA_TOPIC_PRODUCER_FOR_UPLOADING_DATA])
+async def test_create_user(data_request, status_code, client_with_db, session_db, replace_producer):
+    response = await client_with_db.post("/auth/register", json=data_request)
 
-    async with AsyncClient(
-                transport=ASGITransport(app),
-                base_url="http://test",
-        ) as ac:
-            response = await ac.post("/auth/register", json=data_request)
+    if status_code == 201:
+        assert response.status_code == status_code
+        data_response = response.json()
 
-            if status_code == 201:
-                assert response.status_code == status_code
+        # данные с БД
+        result_db = await session_db.execute(select(Users).where(Users.username == data_request['username']))
+        data_db = result_db.scalar_one_or_none()
 
-                # данные с БД
-                result_db = await db_session.execute(select(User).where(User.username == data_request['username']))
-                data_db = result_db.scalar_one_or_none()
+        assert replace_producer.all_message
+        data_kafka = replace_producer.all_message[0].value
 
-                # данные ответа сервера
-                data_response = response.json()
+        assert data_db.user_id == data_response["user_id"] == data_kafka['user_id']
+        assert data_db.username == data_request['username'] == data_response["username"] == data_kafka['username']
+        assert data_request['full_name'] == data_response["full_name"] == data_kafka['full_name']
+        assert datetime.fromisoformat(data_response["created_at"]) == datetime.fromisoformat(data_kafka['created_at'])
 
-                # данные с kafka
-                data_kafka = None
-                for i in range(40): # такой большой тайминг, ибо при пересоздании топика может быть большая задержка у первого сообщения
-                    try:
-                        msg = consumer.poll(timeout=1.0)
-                        if msg is None:# если не успели отослать сообщение, а уже пытаемся его прочитать
-                            if i == 39:
-                                raise Exception("НЕ смогли получить сообщение от kafka!")
-                            else:
-                                continue
-
-                        data_kafka = json.loads(msg.value().decode('utf-8'))
-                        break
-                    except KafkaError as e:
-                        raise Exception(f"Ошибка Kafka: {e}")
-
-
-                assert data_db.user_id == data_response["user_id"] == data_kafka['user_id']
-                assert data_db.username == data_request['username'] == data_response["username"] == data_kafka['username']
-                assert data_request['full_name'] == data_response["full_name"] == data_kafka['full_name']
-                assert datetime.fromisoformat(data_response["created_at"]) == datetime.fromisoformat(data_kafka['created_at'])
-
-            elif 409: # создаём ещё одного юзера
-                response = await ac.post("/auth/register", json=data_request)
-                assert response.status_code == status_code
-
+    elif 409: # создаём ещё одного юзера
+        response = await client_with_db.post("/auth/register", json=data_request)
+        assert response.status_code == status_code
 
 
 @pytest.mark.asyncio
@@ -80,74 +47,108 @@ async def test_create_user(data_request, status_code, db_session, clearing_kafka
         200,
         401
     ]
-
 )
-async def test_login(status_code, db_session, redis_session, create_user, clearing_redis):
-    async with AsyncClient(
-            transport=ASGITransport(app),
-            base_url="http://test",
-    ) as ac:
-        if status_code == 200:
-            response = await ac.post("/auth/login", data={
-                'username': create_user['username'],
-                'password': create_user['password']
-            })
-            assert response.status_code == status_code
+async def test_login(
+    status_code,
+    client_with_db,
+    user_service_fix,
+):
+    user_service = user_service_fix
+    password = "strong_password"
+    test_user = await user_service.register(
+        username="test@mail.com",
+        password=password,
+        full_name="full_name"
+    )
 
-            # данные ответа сервера
-            data_response = response.json()
+    if status_code == 200:
+        response = await client_with_db.post(
+            "/auth/login",
+            data={
+                'username': test_user.username,
+                'password': password
+            }
+        )
+        assert response.status_code == status_code
 
-            assert data_response['access_token']
-            assert data_response['refresh_token']
+        # данные ответа сервера
+        data_response = TokenResponse(**response.json())
 
-        else:
-            # запрос с неверными данными для входа
-            response = await ac.post("/auth/login", data={
+        assert data_response.access_token
+        assert data_response.refresh_token
+
+    else:
+        # запрос с неверными данными для входа
+        response = await client_with_db.post(
+            "/auth/login",
+            data={
                 'username': 'unfaithful_username',
                 'password': 'unfaithful_password'
-            })
-            assert response.status_code == status_code
-
-            # тест: много запросов на вход (тут проверяем работу redis)
-            for i in range(10): # 10 раз будем пытаться войти в профиль
-                response = await ac.post("/auth/login", data={
-                    'username': 'incorrect_data',
-                    'password': 'incorrect_data'
-                })
-                if response.status_code == status.HTTP_429_TOO_MANY_REQUESTS:
-                    break
-            else:
-                raise Exception("за 10 попыток входа так и не получили ошибку по количеству обращений к API")
+            }
+        )
+        assert response.status_code == status_code
 
 
-@pytest.mark.asyncio
-async def test_refresh_token(create_user):
-    async with AsyncClient(
-            transport=ASGITransport(app),
-            base_url="http://test",
-    ) as ac:
-        response = await ac.post("/auth/refresh_token", json={
-            'refresh_token': create_user['refresh_token']
-        })
-        assert response.status_code == 200
-
+        for i in range(15):
+            response = await client_with_db.post(
+                "/auth/login",
+                data={
+                    'username': 'unfaithful_username',
+                    'password': 'unfaithful_password'
+                }
+            )
+            if response.status_code == status.HTTP_429_TOO_MANY_REQUESTS:
+                break
+        else:
+            raise Exception("за 10 попыток входа так и не получили ошибку по количеству обращений к API")
 
 
 @pytest.mark.asyncio
-async def test_logout(create_user, redis_session, db_session):
-    async with AsyncClient(
-            transport=ASGITransport(app),
-            base_url="http://test",
-    ) as ac:
-        response = await ac.post("/auth/logout", headers={"Authorization": f"Bearer {create_user['access_token']}"})
-        assert response.status_code == 200
+async def test_refresh_token(user_service_fix, client_with_db, fake_request):
+    user_service = user_service_fix
+    test_user = await user_service.register(
+        username="test@mail.com",
+        password="strong_password",
+        full_name="full_name"
+    )
+    tokens = await user_service.login(
+        request=fake_request(),
+        username=test_user.username,
+        password="strong_password"
+    )
 
-        result_witch_redis = await redis_session.get(f'user:{create_user['user_id']}')
-        assert not result_witch_redis
+    response = await client_with_db.post(
+        "/auth/refresh_token",
+        json={
+            'refresh_token': tokens.refresh_token
+        }
+    )
+    assert response.status_code == 200
 
-        result_witch_db = await db_session.execute(select(RefreshToken)
-        .where(
-            RefreshToken.user_id == create_user['user_id']
-        ))
-        result_witch_db = result_witch_db.scalar_one_or_none()
-        assert not result_witch_db
+
+@pytest.mark.asyncio
+async def test_logout(user_service_fix, fake_request, client_with_db):
+    user_service = user_service_fix
+    test_user = await user_service.register(
+        username="test@mail.com",
+        password="strong_password",
+        full_name="full_name"
+    )
+    tokens = await user_service.login(
+        request=fake_request(),
+        username=test_user.username,
+        password="strong_password"
+    )
+
+    response = await client_with_db.post(
+        "/auth/logout",
+        headers={"Authorization": f"Bearer {tokens.access_token}"}
+    )
+    assert response.status_code == 200
+
+    # с redis должны удалить
+    result_witch_redis = await user_service.cache_repo.get_user(test_user.user_id)
+    assert not result_witch_redis
+
+    result_witch_db = await user_service.refresh_token_repo.validate_refresh_token(tokens.refresh_token)
+    assert not result_witch_db

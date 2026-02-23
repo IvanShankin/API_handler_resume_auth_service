@@ -1,26 +1,42 @@
 import asyncio
 import uvicorn
-import os
-from dotenv import load_dotenv
-from fastapi import FastAPI
 
-from src.database.database import create_database
-from src.requests import main_router
-from src.dependencies import check_exists_topic
+from src.api.app import init_fastapi_app
+from src.database.creating import create_database
+from src.infrastructure.kafka import init_producer, shutdown_producer
+from src.infrastructure.kafka.admin_client import init_admin_client, shutdown_admin_client
+from src.infrastructure.kafka.topic_manager import check_exists_topic
+from src.infrastructure.redis.core import init_redis, close_redis
+from src.service.config import init_config
 
-load_dotenv()
-KAFKA_TOPIC_PRODUCER_FOR_UPLOADING_DATA = os.getenv('KAFKA_TOPIC_PRODUCER_FOR_UPLOADING_DATA')
 
-app = FastAPI()
+async def on_startup():
+    init_fastapi_app()
+    conf = init_config()
 
-app.include_router(main_router)
+    await init_redis()
+    await create_database()
+
+    await init_admin_client()
+    await init_producer()
+    await check_exists_topic(conf.env.kafka_topic_producer_for_uploading_data)
+
+
+async def on_shutdown():
+    await close_redis()
+    await shutdown_producer()
+    await shutdown_admin_client()
+
 
 if __name__ == '__main__':
-    check_exists_topic(KAFKA_TOPIC_PRODUCER_FOR_UPLOADING_DATA)
-    asyncio.run(create_database())
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True
-    )
+    asyncio.run(on_startup())
+
+    try:
+        uvicorn.run(
+            "main:app",
+            host="0.0.0.0",
+            port=8000,
+            reload=True
+        )
+    finally:
+        asyncio.run(on_shutdown())

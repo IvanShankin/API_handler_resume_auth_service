@@ -20,8 +20,8 @@
 - Выход с инвалидацией токенов (`/auth/logout`)
 
 ### Безопасность
-- Ограничение активных сессий (MAX_ACTIVE_SESSIONS = 5)
-- Блокировка при 5 неудачных попытках входа на 5 минут
+- Ограничение активных сессий (config.max_active_sessions = 10)
+- Блокировка при 15 неудачных попытках входа на 5 минут (config.max_attempts_enter = 15)
 - Хеширование паролей (bcrypt)
 
 ### Интеграция
@@ -79,7 +79,7 @@ docker-compose up -d
 
 ## Конфигурация
 Основные настройки сервиса находятся в:
-- `src/config.py` - основные параметры сервиса
+- `src/service/config/shemas` - основные параметры сервиса
 - `.env` - переменные окружения
 
 ## Тестирование
@@ -95,54 +95,25 @@ docker-compose --env-file .test.env up -d
 docker-compose --env-file .test.env exec app pytest
 ```
 
-Тесты покрывают:
-- Работу эндпоинтов API
-- Логику аутентификации
-- Интеграцию с Redis и Kafka
-- Обработку ошибок
-
 ---
 
 ## Логирование
-Логи сохраняются в файл `logs/auth_service.log` с ротацией по дням.
+Логи сохраняются в файл `media/logs/auth_service.log` с ротацией по дням.
 
 ## Данные в Kafka
 
 ### Отправляемые сообщения (топик `uploading_data`)
-```python
+```json
 {
   "key": "new_user",
   "value": {
-    "user_id": int,
-    "username": str,
-    "full_name": str,
-    "created_at": str  # ISO format
+    "user_id": "int",
+    "username": "str",
+    "full_name": "str",
+    "created_at": "str"  # ISO format
   }
 }
 ```
-
----
-
-## Хранение в Redis
-
-### 1. Кэш пользователя
-**Ключ:** `user:{user_id}`  
-**Значение:**  
-```json
-{"user_id": 123, "username": "user@example.com"}
-```
-**TTL:** 30 минут (ACCESS_TOKEN_EXPIRE_MINUTES)
-
-### 2. Блокировки входа
-**Ключ:** `login_block:{ip}:{username}`  
-**Значение:** `1`  (метка)  
-**Назначение:** Блокировка при превышении попыток входа.  
-**TTL:** `LOGIN_BLOCK_TIME` (300 сек.)  
-
-### 3. Счетчик попыток
-**Ключ:** `login_attempt:{ip}:{username}`  
-**Значение:** `3` (количество попыток)  
-**TTL:** `LOGIN_BLOCK_TIME` (300 сек.) 
 
 ---
 

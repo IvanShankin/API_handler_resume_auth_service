@@ -87,11 +87,7 @@ jobs:
 
       - name: Run tests
         env:
-          # JWT и токены
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          ACCESS_TOKEN_EXPIRE_MINUTES: ${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }}
-          REFRESH_TOKEN_EXPIRE_DAYS: ${{ secrets.REFRESH_TOKEN_EXPIRE_DAYS }}
-          ALGORITHM: ${{ secrets.ALGORITHM }}
 
           # Redis
           REDIS_HOST: ${{ secrets.REDIS_HOST }}
@@ -126,9 +122,6 @@ jobs:
 
           # JWT и токены
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          ACCESS_TOKEN_EXPIRE_MINUTES: ${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }}
-          REFRESH_TOKEN_EXPIRE_DAYS: ${{ secrets.REFRESH_TOKEN_EXPIRE_DAYS }}
-          ALGORITHM: ${{ secrets.ALGORITHM }}
           
           # Redis
           REDIS_HOST: ${{ secrets.REDIS_HOST }}

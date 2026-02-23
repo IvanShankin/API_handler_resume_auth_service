@@ -1,17 +1,19 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from src.database.base import Base
 
 
-class User(Base):
+class Users(Base):
     __tablename__ = "users"
     user_id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String(255), unique=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     refresh_tokens = relationship("RefreshToken", back_populates="user")
+
 
 class RefreshToken(Base):
     __tablename__ = "refresh_tokens"
@@ -21,4 +23,4 @@ class RefreshToken(Base):
     expires_at = Column(DateTime(timezone=True), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    user = relationship("User", back_populates="refresh_tokens")
+    user = relationship("Users", back_populates="refresh_tokens")
