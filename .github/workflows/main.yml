@@ -71,6 +71,7 @@ jobs:
           KAFKA_TOPIC_PRODUCER_FOR_UPLOADING_DATA: test_topic
 
           DB_HOST: localhost
+          DB_PORT: 5432
           DB_USER: test
           DB_PASSWORD: test
           DB_NAME: test_db
