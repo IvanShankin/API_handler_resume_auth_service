@@ -31,8 +31,8 @@ class UserService:
     def __init__(
         self,
         user_repo: UserRepository,
-        refresh_token_repo: RefreshTokenRepository,
         cache_repo: UserCacheRepository,
+        refresh_token_repo: RefreshTokenRepository,
         producer: ProducerKafka,
         session_db: AsyncSession,
         config: Config,

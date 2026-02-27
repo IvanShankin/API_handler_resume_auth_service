@@ -38,4 +38,4 @@ class FakeAdminClient:
 
     async def list_topics(self):
         conf = get_config()
-        return [conf.env.kafka_topic_producer_for_uploading_data]
+        return [conf.env.topic_uploading_data]

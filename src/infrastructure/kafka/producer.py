@@ -70,7 +70,7 @@ class ProducerKafka:
         data_create: datetime
     ):
         await self.send_message(
-            topic=get_config().env.kafka_topic_producer_for_uploading_data,
+            topic=get_config().env.topic_uploading_data,
             key="new_user",
             value={
                 "user_id": user_id,

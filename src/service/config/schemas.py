@@ -33,7 +33,7 @@ class EnvConfig(BaseModel):
     db_password: str
     db_name: str
 
-    kafka_topic_producer_for_uploading_data: str
+    topic_uploading_data: str
     kafka_bootstrap_servers: str
 
     redis_host: str
@@ -51,7 +51,7 @@ class EnvConfig(BaseModel):
             db_password=os.environ['DB_PASSWORD'],
             db_name=os.environ['DB_NAME'],
 
-            kafka_topic_producer_for_uploading_data=os.environ['KAFKA_TOPIC_PRODUCER_FOR_UPLOADING_DATA'],
+            topic_uploading_data=os.environ['TOPIC_UPLOADING_DATA'],
             kafka_bootstrap_servers=os.environ['KAFKA_BOOTSTRAP_SERVERS'],
 
             redis_host=os.environ['REDIS_HOST'],

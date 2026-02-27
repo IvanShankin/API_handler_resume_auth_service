@@ -56,10 +56,6 @@ jobs:
         run: |
           pip install -r requirements.txt
 
-      - name: Wait for Kafka
-        run: |
-          sleep 20
-
       - name: Run tests
         env:
           SECRET_KEY: test
@@ -68,7 +64,7 @@ jobs:
           REDIS_PORT: 6379
 
           KAFKA_BOOTSTRAP_SERVERS: localhost:9092
-          KAFKA_TOPIC_PRODUCER_FOR_UPLOADING_DATA: test_topic
+          TOPIC_UPLOADING_DATA: test_topic
 
           DB_HOST: localhost
           DB_PORT: 5432
