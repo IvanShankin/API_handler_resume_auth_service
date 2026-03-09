@@ -45,7 +45,7 @@ async def lifespan(app: FastAPI):
 
     await init_admin_client()
     await init_producer()
-    await check_exists_topic(conf.env.topic_uploading_data)
+    await check_exists_topic(conf.kafka_topics.all_topics)
 
     try:
         yield

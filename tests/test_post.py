@@ -33,7 +33,7 @@ async def test_create_user(data_request, status_code, client_with_db, session_db
         assert data_db.user_id == data_response["user_id"] == data_kafka['user_id']
         assert data_db.username == data_request['username'] == data_response["username"] == data_kafka['username']
         assert data_request['full_name'] == data_response["full_name"] == data_kafka['full_name']
-        assert datetime.fromisoformat(data_response["created_at"]) == datetime.fromisoformat(data_kafka['created_at'])
+        assert datetime.fromisoformat(data_response["created_at"]) == data_kafka['created_at']
 
     elif 409: # создаём ещё одного юзера
         response = await client_with_db.post("/auth/register", json=data_request)

@@ -1,5 +1,4 @@
-from typing import  List
-from starlette.requests import Request
+from typing import List, Optional
 
 from src.infrastructure.kafka import ProducerKafka
 from src.service import get_config
@@ -17,8 +16,8 @@ class KafkaTestProducer(ProducerKafka):
     async def send_message(
         self,
         topic: str,
-        key: str,
-        value: dict | str | bytes
+        value: dict | str | bytes,
+        key: Optional[str] = None,
     ):
         """Сохранит все """
         self.all_message.append(
@@ -38,4 +37,4 @@ class FakeAdminClient:
 
     async def list_topics(self):
         conf = get_config()
-        return [conf.env.topic_uploading_data]
+        return conf.kafka_topics.all_topics

@@ -1,6 +1,7 @@
 import os
 from datetime import timedelta
 from pathlib import Path
+from typing import List
 
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncEngine
@@ -21,6 +22,7 @@ class Config:
         self.db_connection = DbConnectionConfig.build(self.env)
         self.paths = PathsConfig.build()
         self.tokens = TokensConfig.build()
+        self.kafka_topics = KafkaTopics.build()
 
 
 
@@ -33,7 +35,6 @@ class EnvConfig(BaseModel):
     db_password: str
     db_name: str
 
-    topic_uploading_data: str
     kafka_bootstrap_servers: str
 
     redis_host: str
@@ -51,7 +52,6 @@ class EnvConfig(BaseModel):
             db_password=os.environ['DB_PASSWORD'],
             db_name=os.environ['DB_NAME'],
 
-            topic_uploading_data=os.environ['TOPIC_UPLOADING_DATA'],
             kafka_bootstrap_servers=os.environ['KAFKA_BOOTSTRAP_SERVERS'],
 
             redis_host=os.environ['REDIS_HOST'],
@@ -124,4 +124,17 @@ class TokensConfig(BaseModel):
             access_token_expire_minutes=30,
             refresh_token_expire_days=30,
             algorithm="HS256",
+        )
+
+
+class KafkaTopics(BaseModel):
+    user_created: str
+
+    all_topics: List[str]
+
+    @classmethod
+    def build(cls) -> "KafkaTopics":
+        return cls(
+            user_created='user.created',
+            all_topics=['user.created'],
         )

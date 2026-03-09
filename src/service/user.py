@@ -1,7 +1,6 @@
 from datetime import timezone, datetime, timedelta, UTC
 from typing import Optional
 from fastapi import Request
-from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from passlib.context import CryptContext
 from pydantic import EmailStr
@@ -19,12 +18,6 @@ from src.service.config import get_config
 from src.service.config.schemas import Config
 from src.service.utils.logger import get_logger
 
-
-oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="auth/login",
-    scheme_name="OAuth2PasswordBearer",
-    scopes={"read": "Read access", "write": "Write access"}
-)
 
 class UserService:
 
@@ -215,7 +208,7 @@ class UserService:
         else:
             raise Exception("Failed to generate token")
 
-        get_logger(__name__).info(f"User {user.user_id} logged in from IP {client_ip}")
+        get_logger().info(f"User {user.user_id} logged in from IP {client_ip}")
         return TokenResponse(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
     async def refresh_token(self, old_refresh_token: str) -> TokenResponse:

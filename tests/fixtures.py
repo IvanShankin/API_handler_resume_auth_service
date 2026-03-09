@@ -28,7 +28,6 @@ async def session_db() -> AsyncSession:
         await session.close()
 
 
-
 @pytest_asyncio.fixture
 async def client_with_db(session_db):  # session_db открываем заранее
     app = get_app()

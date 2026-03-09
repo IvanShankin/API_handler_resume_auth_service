@@ -1,10 +1,12 @@
-import json
+import orjson
 import socket
 from datetime import datetime
+from typing import Any
 
 from aiokafka import AIOKafkaProducer
 from pydantic import EmailStr
 
+from src.schemas.kafka_data import NewUser
 from src.service.config import get_config
 from src.service.utils.logger import get_logger
 
@@ -12,10 +14,10 @@ from src.service.utils.logger import get_logger
 class ProducerKafka:
 
     def __init__(self):
-        conf = get_config()
-        self.logger = get_logger(__name__)
+        self.conf = get_config()
+        self.logger = get_logger()
 
-        self._bootstrap_servers = conf.env.kafka_bootstrap_servers
+        self._bootstrap_servers = self.conf.env.kafka_bootstrap_servers
         self._producer = AIOKafkaProducer(
             bootstrap_servers=self._bootstrap_servers,
             client_id=socket.gethostname(),
@@ -44,12 +46,12 @@ class ProducerKafka:
     async def send_message(
         self,
         topic: str,
-        key: str,
-        value: dict | str | bytes
+        value: dict | str | bytes,
+        key: Any = None,
     ):
         try:
             if isinstance(value, dict):
-                value = json.dumps(value).encode()
+                value = orjson.dumps(value).encode()
             elif isinstance(value, str):
                 value = value.encode()
             await self._producer.send_and_wait(
@@ -70,14 +72,13 @@ class ProducerKafka:
         data_create: datetime
     ):
         await self.send_message(
-            topic=get_config().env.topic_uploading_data,
-            key="new_user",
-            value={
-                "user_id": user_id,
-                "username": str(username),
-                "full_name": full_name,
-                "created_at": data_create.isoformat(),
-            }
+            topic=self.conf.kafka_topics.user_created,
+            value=NewUser(
+                user_id=user_id,
+                username=str(username),
+                full_name=full_name,
+                created_at=data_create,
+            ).model_dump()
         )
 
 

@@ -87,13 +87,6 @@ docker-compose up -d
 ```bash
 pytest
 ```
-Для запуска тестов через Docker:
-```bash
-docker-compose --env-file .test.env up -d
-```
-```bash
-docker-compose --env-file .test.env exec app pytest
-```
 
 ---
 
