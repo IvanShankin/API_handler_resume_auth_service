@@ -12,7 +12,7 @@ from src.exeptions.http_exc import UserAlreadyRegistered, InvalidCredentialsExce
 from src.database.models import Users
 
 
-router = APIRouter(prefix="/auth")
+router = APIRouter()
 
 
 @router.post('/register', response_model=UserOut, status_code=status.HTTP_201_CREATED)

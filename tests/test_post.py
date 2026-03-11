@@ -17,7 +17,7 @@ from src.schemas.response import TokenResponse
     ]
 )
 async def test_create_user(data_request, status_code, client_with_db, session_db, replace_producer):
-    response = await client_with_db.post("/auth/register", json=data_request)
+    response = await client_with_db.post("/register", json=data_request)
 
     if status_code == 201:
         assert response.status_code == status_code
@@ -36,7 +36,7 @@ async def test_create_user(data_request, status_code, client_with_db, session_db
         assert datetime.fromisoformat(data_response["created_at"]) == data_kafka['created_at']
 
     elif 409: # создаём ещё одного юзера
-        response = await client_with_db.post("/auth/register", json=data_request)
+        response = await client_with_db.post("/register", json=data_request)
         assert response.status_code == status_code
 
 
@@ -63,7 +63,7 @@ async def test_login(
 
     if status_code == 200:
         response = await client_with_db.post(
-            "/auth/login",
+            "/login",
             data={
                 'username': test_user.username,
                 'password': password
@@ -80,7 +80,7 @@ async def test_login(
     else:
         # запрос с неверными данными для входа
         response = await client_with_db.post(
-            "/auth/login",
+            "/login",
             data={
                 'username': 'unfaithful_username',
                 'password': 'unfaithful_password'
@@ -91,7 +91,7 @@ async def test_login(
 
         for i in range(15):
             response = await client_with_db.post(
-                "/auth/login",
+                "/login",
                 data={
                     'username': 'unfaithful_username',
                     'password': 'unfaithful_password'
@@ -118,7 +118,7 @@ async def test_refresh_token(user_service_fix, client_with_db, fake_request):
     )
 
     response = await client_with_db.post(
-        "/auth/refresh_token",
+        "/refresh_token",
         json={
             'refresh_token': tokens.refresh_token
         }
@@ -141,7 +141,7 @@ async def test_logout(user_service_fix, fake_request, client_with_db):
     )
 
     response = await client_with_db.post(
-        "/auth/logout",
+        "/logout",
         headers={"Authorization": f"Bearer {tokens.access_token}"}
     )
     assert response.status_code == 200

@@ -51,12 +51,12 @@ class ProducerKafka:
     ):
         try:
             if isinstance(value, dict):
-                value = orjson.dumps(value).encode()
+                value = orjson.dumps(value)
             elif isinstance(value, str):
                 value = value.encode()
             await self._producer.send_and_wait(
                 topic=topic,
-                key=key.encode(),
+                key=key.encode() if isinstance(value, str) else None,
                 value=value
             )
             self.logger.info(f"Kafka message sent to topic={topic}")
