@@ -9,6 +9,7 @@ from src.infrastructure.kafka.admin_client import init_admin_client, shutdown_ad
 from src.infrastructure.kafka.topic_manager import check_exists_topic
 from src.infrastructure.redis.core import init_redis, close_redis
 from src.service.config import init_config
+from src.service.utils.logger import setup_logging
 
 _app: Optional[FastAPI] = None
 
@@ -39,6 +40,7 @@ def get_app():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     conf = init_config()
+    setup_logging(conf.paths.log_file)
 
     await init_redis()
     await create_database()
